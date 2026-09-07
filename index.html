@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mast Check-In</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; background: #f0f2f5; }
+    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); max-width: 400px; margin: auto; }
+    h2 { margin-top: 0; text-align: center; color: #1a1a1a; font-size: 22px; }
+    label { display: block; margin-top: 12px; font-weight: 600; font-size: 14px; color: #444; }
+    select, input { width: 100%; padding: 12px; margin-top: 6px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+    .btn-group { display: flex; gap: 10px; margin-top: 20px; }
+    button { flex: 1; padding: 14px; border: none; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; color: white; }
+    .btn-in { background-color: #28a745; }
+    .btn-out { background-color: #dc3545; }
+    button:disabled { opacity: 0.6; }
+    #statusBox { margin-top: 15px; padding: 12px; border-radius: 6px; font-size: 14px; display: none; text-align: center; }
+    .offline-badge { font-size: 13px; color: #d35400; text-align: center; margin-top: 12px; font-weight: bold; display: none; }
+  </style>
+</head>
+<body>
+
+<div class="card">
+  <h2>Mast-Erfassung</h2>
+
+  <form id="mastForm">
+    <label>Firma:</label>
+    <select id="firma" required>
+      <option value="">-- Firma wählen --</option>
+      <option value="Firma Alpha">Firma Alpha</option>
+      <option value="Montagebau Beta">Montagebau Beta</option>
+      <option value="Elektro Gamma">Elektro Gamma</option>
+    </select>
+
+    <label>Art der Arbeit:</label>
+    <select id="arbeit" required>
+      <option value="">-- Tätigkeit wählen --</option>
+      <option value="Wartung / Inspektion">Wartung / Inspektion</option>
+      <option value="Kabelzug / Montage">Kabelzug / Montage</option>
+      <option value="Demontage">Demontage</option>
+      <option value="Notdienst">Notdienst</option>
+    </select>
+
+    <label>Anzahl Monteure vor Ort:</label>
+    <input type="number" id="mitarbeiter" min="1" max="50" value="1" required>
+
+    <label>Mast-Nummer:</label>
+    <input type="text" id="mast" placeholder="z. B. MST-104" required>
+
+    <div class="btn-group">
+      <button type="button" class="btn-in" onclick="handleSubmit('Check-In')">Anmelden</button>
+      <button type="button" class="btn-out" onclick="handleSubmit('Check-Out')">Abmelden</button>
+    </div>
+  </form>
+
+  <div id="statusBox"></div>
+  <div id="offlineNotice" class="offline-badge"></div>
+</div>
+
+<script>
+ https://script.google.com/macros/s/AKfycbysBmKyv5sB87QsrJG-ID2s1pAOFpJKcKzMRgOkwdYYc-eMDbKY-yKDplZVxXsiqwKY/exec;
+
+  function showStatus(text, isError = false) {
+    const box = document.getElementById('statusBox');
+    box.style.display = 'block';
+    box.style.background = isError ? '#f8d7da' : '#d4edda';
+    box.style.color = isError ? '#721c24' : '#155724';
+    box.innerText = text;
+  }
+
+  function handleSubmit(actionType) {
+    const form = document.getElementById('mastForm');
+    if (!form.reportValidity()) return;
+
+    const payload = {
+      typ: actionType,
+      timestamp: new Date().toISOString(),
+      firma: document.getElementById('firma').value,
+      arbeit: document.getElementById('arbeit').value,
+      mitarbeiter: document.getElementById('mitarbeiter').value,
+      mast: document.getElementById('mast').value,
+      latitude: 0,
+      longitude: 0
+    };
+
+    showStatus("Ermittle GPS...");
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        payload.latitude = pos.coords.latitude;
+        payload.longitude = pos.coords.longitude;
+        sendOrQueue(payload);
+      },
+      (err) => {
+        // Falls GPS verweigert wird oder nicht klappt, trotzdem mit 0,0 senden
+        sendOrQueue(payload);
+      },
+      { enableHighAccuracy: true, timeout: 8000 }
+    );
+  }
+
+  async function sendOrQueue(payload) {
+    showStatus("Sende " + payload.typ + "...");
+
+    if (!navigator.onLine) {
+      saveToQueue(payload);
+      showStatus("Kein Netz! Meldung lokal gesichert. Wird automatisch gesendet sobald Empfang da ist.");
+      return;
+    }
+
+    try {
+      await fetch(SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      showStatus(payload.typ + " erfolgreich gesendet!");
+    } catch (e) {
+      saveToQueue(payload);
+      showStatus("Übertragungsfehler: Lokal gespeichert, sendet später.");
+    }
+  }
+
+  function saveToQueue(payload) {
+    const q = JSON.parse(localStorage.getItem('checkin_queue') || '[]');
+    q.push(payload);
+    localStorage.setItem('checkin_queue', JSON.stringify(q));
+    updateOfflineBadge();
+  }
+
+  async function syncQueue() {
+    const q = JSON.parse(localStorage.getItem('checkin_queue') || '[]');
+    if (q.length === 0 || !navigator.onLine) return;
+
+    updateOfflineBadge();
+    const remaining = [];
+
+    for (const item of q) {
+      try {
+        await fetch(SCRIPT_URL, {
+          method: 'POST',
+          mode: 'no-cors',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(item)
+        });
+      } catch (err) {
+        remaining.push(item);
+      }
+    }
+
+    localStorage.setItem('checkin_queue', JSON.stringify(remaining));
+    updateOfflineBadge();
+    if (remaining.length === 0 && q.length > 0) {
+      showStatus("Offline gespeicherte Meldungen nachgesendet!");
+    }
+  }
+
+  function updateOfflineBadge() {
+    const q = JSON.parse(localStorage.getItem('checkin_queue') || '[]');
+    const b = document.getElementById('offlineNotice');
+    if (q.length > 0) {
+      b.style.display = 'block';
+      b.innerText = q.length + " Meldung(en) warten auf Netz...";
+    } else {
+      b.style.display = 'none';
+    }
+  }
+
+  window.addEventListener('online', syncQueue);
+  window.addEventListener('load', () => {
+    updateOfflineBadge();
+    syncQueue();
+    // Offline-Service-Worker registrieren
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  });
+</script>
+</body>
+</html>
