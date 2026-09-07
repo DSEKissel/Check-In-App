@@ -6,18 +6,76 @@
   <title>Mast Check-In</title>
   <link rel="manifest" href="manifest.json">
   <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 15px; margin: 0; background: #f0f2f5; }
-    .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); max-width: 400px; margin: auto; }
-    h2 { margin-top: 0; text-align: center; color: #1a1a1a; font-size: 22px; }
-    label { display: block; margin-top: 12px; font-weight: 600; font-size: 14px; color: #444; }
-    select, input { width: 100%; padding: 12px; margin-top: 6px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
-    .btn-group { display: flex; gap: 10px; margin-top: 20px; }
-    button { flex: 1; padding: 14px; border: none; font-size: 16px; font-weight: bold; border-radius: 8px; cursor: pointer; color: white; }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      padding: 15px; 
+      margin: 0; 
+      background: #f0f2f5; 
+    }
+    .card { 
+      background: white; 
+      padding: 20px; 
+      border-radius: 12px; 
+      box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+      max-width: 400px; 
+      margin: auto; 
+    }
+    h2 { 
+      margin-top: 0; 
+      text-align: center; 
+      color: #1a1a1a; 
+      font-size: 22px; 
+    }
+    label { 
+      display: block; 
+      margin-top: 12px; 
+      font-weight: 600; 
+      font-size: 14px; 
+      color: #444; 
+    }
+    select, input { 
+      width: 100%; 
+      padding: 12px; 
+      margin-top: 6px; 
+      box-sizing: border-box; 
+      border: 1px solid #ccc; 
+      border-radius: 8px; 
+      font-size: 16px; 
+    }
+    .btn-group { 
+      display: flex; 
+      gap: 10px; 
+      margin-top: 20px; 
+    }
+    button { 
+      flex: 1; 
+      padding: 14px; 
+      border: none; 
+      font-size: 16px; 
+      font-weight: bold; 
+      border-radius: 8px; 
+      cursor: pointer; 
+      color: white; 
+    }
     .btn-in { background-color: #28a745; }
     .btn-out { background-color: #dc3545; }
-    button:disabled { opacity: 0.6; }
-    #statusBox { margin-top: 15px; padding: 12px; border-radius: 6px; font-size: 14px; display: none; text-align: center; }
-    .offline-badge { font-size: 13px; color: #d35400; text-align: center; margin-top: 12px; font-weight: bold; display: none; }
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    #statusBox { 
+      margin-top: 15px; 
+      padding: 12px; 
+      border-radius: 6px; 
+      font-size: 14px; 
+      display: none; 
+      text-align: center; 
+    }
+    .offline-badge { 
+      font-size: 13px; 
+      color: #d35400; 
+      text-align: center; 
+      margin-top: 12px; 
+      font-weight: bold; 
+      display: none; 
+    }
   </style>
 </head>
 <body>
@@ -29,7 +87,7 @@
     <label>Firma:</label>
     <select id="firma" required>
       <option value="">-- Firma wählen --</option>
-      <option value="DSE">DSE</option>
+     <option value="DSE">DSE</option>
       <option value="GVS">GVS</option>
       <option value="Reuter">Reuter</option>
       <option value="Depenbrock">Depenbrock</option>
@@ -39,8 +97,7 @@
       <option value="Mobile Wege">Mobile Wege</option>
       <option value="Ferataj">Ferataj</option>
       <option value="Sönke & Jordt">Sönke & Jordt</option>
-      <option value="Ulferts & Wittrock">Ulferts & Wittrock</option>
-    </select>
+      <option value="Ulferts & Wittrock">Ulferts & Wittrock</option>    </select>
 
     <label>Art der Arbeit:</label>
     <select id="arbeit" required>
@@ -54,7 +111,6 @@
       <option value="sonstiges">sonstiges</option>
       <option value="Montage">Montage</option>
       <option value="Sonstiges">Sonstiges</option>
-
       <option value="Wartung / Inspektion">Wartung / Inspektion</option>
       <option value="Kabelzug / Montage">Kabelzug / Montage</option>
       <option value="Demontage">Demontage</option>
@@ -78,7 +134,7 @@
 </div>
 
 <script>
- https://script.google.com/macros/s/AKfycbysBmKyv5sB87QsrJG-ID2s1pAOFpJKcKzMRgOkwdYYc-eMDbKY-yKDplZVxXsiqwKY/exec;
+  const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbysBmKyv5sB87QsrJG-ID2s1pAOFpJKcKzMRgOkwdYYc-eMDbKY-yKDplZVxXsiqwKY/exec";
 
   function showStatus(text, isError = false) {
     const box = document.getElementById('statusBox');
@@ -103,42 +159,40 @@
       longitude: 0
     };
 
-    showStatus("Ermittle GPS...");
+    showStatus("Ermittle Standort...");
 
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         payload.latitude = pos.coords.latitude;
         payload.longitude = pos.coords.longitude;
-        sendOrQueue(payload);
+        sendData(payload);
       },
       (err) => {
-        // Falls GPS verweigert wird oder nicht klappt, trotzdem mit 0,0 senden
-        sendOrQueue(payload);
+        // Fallback falls GPS im Gebäude nicht klappt
+        sendData(payload);
       },
-      { enableHighAccuracy: true, timeout: 8000 }
+      { enableHighAccuracy: true, timeout: 5000 }
     );
   }
 
-  async function sendOrQueue(payload) {
+  async function sendData(payload) {
     showStatus("Sende " + payload.typ + "...");
-
-    if (!navigator.onLine) {
-      saveToQueue(payload);
-      showStatus("Kein Netz! Meldung lokal gesichert. Wird automatisch gesendet sobald Empfang da ist.");
-      return;
-    }
 
     try {
       await fetch(SCRIPT_URL, {
         method: 'POST',
         mode: 'no-cors',
-        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-cache',
+        redirect: 'follow',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
         body: JSON.stringify(payload)
       });
+
       showStatus(payload.typ + " erfolgreich gesendet!");
+      document.getElementById('mastForm').reset();
     } catch (e) {
       saveToQueue(payload);
-      showStatus("Übertragungsfehler: Lokal gespeichert, sendet später.");
+      showStatus("Offline oder Verbindungsproblem: Lokal gespeichert.", true);
     }
   }
 
@@ -151,17 +205,17 @@
 
   async function syncQueue() {
     const q = JSON.parse(localStorage.getItem('checkin_queue') || '[]');
-    if (q.length === 0 || !navigator.onLine) return;
+    if (q.length === 0) return;
 
-    updateOfflineBadge();
     const remaining = [];
-
     for (const item of q) {
       try {
         await fetch(SCRIPT_URL, {
           method: 'POST',
           mode: 'no-cors',
-          headers: { 'Content-Type': 'application/json' },
+          cache: 'no-cache',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
           body: JSON.stringify(item)
         });
       } catch (err) {
@@ -171,9 +225,12 @@
 
     localStorage.setItem('checkin_queue', JSON.stringify(remaining));
     updateOfflineBadge();
-    if (remaining.length === 0 && q.length > 0) {
-      showStatus("Offline gespeicherte Meldungen nachgesendet!");
-    }
+  }
+
+  function clearOldQueue() {
+    localStorage.removeItem('checkin_queue');
+    updateOfflineBadge();
+    showStatus("Alte Warteschlange geleert.");
   }
 
   function updateOfflineBadge() {
@@ -181,7 +238,7 @@
     const b = document.getElementById('offlineNotice');
     if (q.length > 0) {
       b.style.display = 'block';
-      b.innerText = q.length + " Meldung(en) warten auf Netz...";
+      b.innerHTML = q.length + ' Meldung(en) warten auf Übertragung.<br><a href="javascript:void(0)" onclick="clearOldQueue()" style="color:#c0392b; font-weight:normal; text-decoration:underline;">[Warteschlange leeren]</a>';
     } else {
       b.style.display = 'none';
     }
@@ -191,7 +248,6 @@
   window.addEventListener('load', () => {
     updateOfflineBadge();
     syncQueue();
-    // Offline-Service-Worker registrieren
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('sw.js');
     }
