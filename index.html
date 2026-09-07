@@ -87,7 +87,7 @@
     <label>Firma:</label>
     <select id="firma" required>
       <option value="">-- Firma wählen --</option>
-     <option value="DSE">DSE</option>
+      <option value="DSE">DSE</option>
       <option value="GVS">GVS</option>
       <option value="Reuter">Reuter</option>
       <option value="Depenbrock">Depenbrock</option>
@@ -97,7 +97,8 @@
       <option value="Mobile Wege">Mobile Wege</option>
       <option value="Ferataj">Ferataj</option>
       <option value="Sönke & Jordt">Sönke & Jordt</option>
-      <option value="Ulferts & Wittrock">Ulferts & Wittrock</option>    </select>
+      <option value="Ulferts & Wittrock">Ulferts & Wittrock</option>
+    </select>
 
     <label>Art der Arbeit:</label>
     <select id="arbeit" required>
@@ -108,13 +109,12 @@
       <option value="Vormontage">Vormontage</option>
       <option value="Bohrpfahlgründung">Bohrpfahlgründung</option>
       <option value="Gründung Plattenfundament">Gründung Plattenfundament</option>
-      <option value="sonstiges">sonstiges</option>
       <option value="Montage">Montage</option>
-      <option value="Sonstiges">Sonstiges</option>
       <option value="Wartung / Inspektion">Wartung / Inspektion</option>
       <option value="Kabelzug / Montage">Kabelzug / Montage</option>
       <option value="Demontage">Demontage</option>
       <option value="Notdienst">Notdienst</option>
+      <option value="Sonstiges">Sonstiges</option>
     </select>
 
     <label>Anzahl Monteure vor Ort:</label>
@@ -168,7 +168,6 @@
         sendData(payload);
       },
       (err) => {
-        // Fallback falls GPS im Gebäude nicht klappt
         sendData(payload);
       },
       { enableHighAccuracy: true, timeout: 5000 }
